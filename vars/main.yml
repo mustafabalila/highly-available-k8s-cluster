@@ -1,0 +1,5 @@
+kubernetes_version: 1.25.0-00
+containerd_version: 1.5.9-0ubuntu3
+admin_user: root
+loadbalancer_vip: 
+network_interface: eth0

@@ -1,0 +1,13 @@
+- name: "Install containerd"
+  ansible.builtin.apt:
+    name:
+      - containerd={{ containerd_version }}
+    state: present
+  become: true
+
+- name: "Start containerd service"
+  ansible.builtin.systemd:
+    name: containerd
+    state: started
+    enabled: true
+  become: true

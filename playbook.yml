@@ -1,0 +1,33 @@
+- name: 'Setup envirnment'
+  hosts: nodes
+  tasks:
+    - name: 'Setup envirnment'
+      ansible.builtin.include_tasks: tasks/env-setup.yml
+
+- name: 'Setup kubernetes nodes'
+  hosts: k8s_nodes
+  tasks:
+    - name: 'Nodes setup'
+      ansible.builtin.include_tasks: tasks/nodes-setup.yml
+
+    - name: 'Install containerd'
+      ansible.builtin.include_tasks: tasks/install-containerd.yml
+
+    - name: 'Install kubernetes components'
+      ansible.builtin.include_tasks: tasks/install-kubernetes-components.yml
+
+- name: 'Setup loadbalancer'
+  hosts: loadbalancer
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: 'Setup loadbalancer'
+      ansible.builtin.include_tasks: tasks/setup-loadbalancer.yml
+
+- name: 'Setup control-plane'
+  hosts: cluster_init_node
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: 'Initialize cluster'
+      ansible.builtin.include_tasks: tasks/initialize-cluster.yml

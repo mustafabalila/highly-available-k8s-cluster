@@ -1,0 +1,53 @@
+- name: "Update package cache"
+  ansible.builtin.package:
+    name: "*"
+    state: latest
+    update_cache: true
+  become: true
+
+- name: "Install zsh, git, vim, wget, and curl"
+  ansible.builtin.package:
+    name:
+      - zsh
+      - git
+      - vim
+      - wget
+      - curl
+    state: present
+  become: true
+
+# install oh-my-zsh using git
+- name: "Install oh-my-zsh"
+  ansible.builtin.git:
+    repo: "https://github.com/ohmyzsh/ohmyzsh.git"
+    dest: "~/.oh-my-zsh"
+    version: "master"
+  become: true
+  changed_when: false
+
+- name: "Copy config file"
+  ansible.builtin.copy:
+    src: "~/.oh-my-zsh/templates/zshrc.zsh-template"
+    dest: "~/.zshrc"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 0644
+  become: true
+
+- name: "Set zsh as default shell"
+  ansible.builtin.command: "chsh -s /bin/zsh {{ ansible_user }}"
+  become: true
+  changed_when: false
+
+- name: "Generate SSH key"
+  ansible.builtin.openssh_keypair:
+    path: "~/.ssh/id_rsa"
+    size: 4096
+    type: rsa
+    comment: "ansible@{{ ansible_hostname }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 0600
+    state: present
+    force: true
+    regenerate: never

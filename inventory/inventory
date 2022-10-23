@@ -1,0 +1,16 @@
+cluster_init_node ansible_host=
+[control_plane]
+cluster_init_node
+
+
+[k8s_workers]
+
+[loadbalancer]
+
+[k8s_nodes:children]
+control_plane
+k8s_workers
+
+[nodes:children]
+control_plane
+loadbalancer

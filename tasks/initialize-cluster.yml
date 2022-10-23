@@ -1,0 +1,68 @@
+- name: "Initialize the cluster using kubeadm"
+  become: true
+  ansible.builtin.command:
+    cmd: >
+      kubeadm init
+      --apiserver-advertise-address={{ hostvars['cluster_init_node']['ansible_default_ipv4']['address'] }}
+      --control-plane-endpoint={{ loadbalancer_vip }}:6443
+      --upload-certs --pod-network-cidr=10.244.0.0/16
+    creates: /etc/kubernetes/admin.conf
+  register: kubeadm_init
+  changed_when: "'Your Kubernetes control-plane has initialized successfully' in kubeadm_init.stdout"
+  failed_when: "'failed to init node' in kubeadm_init.stderr"
+
+- name: "Create .kube directory in home directory"
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: 0755
+
+- name: "Copy kubeconfig to home directory"
+  ansible.builtin.copy:
+    remote_src: true
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    mode: 0644
+
+- name: "Chown kubeconfig to root"
+  ansible.builtin.file:
+    path: /root/.kube/config
+    owner: root
+    group: root
+
+- name: "Install the Flannel CNI"
+  become: true
+  ansible.builtin.command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  retries: 5
+  delay: 5
+  changed_when: false
+
+- name: "Create a certificate-key for master nodes to join"
+  become: true
+  ansible.builtin.shell: set -o pipefail && kubeadm init phase upload-certs --upload-certs | tail -n 1
+  args:
+    executable: /bin/zsh
+  register: certificate_key
+  changed_when: false
+
+- name: "Get discovery token ca cert hash"
+  become: true
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: join_command
+  changed_when: false
+
+- name: "Save variables to a local file"
+  ansible.builtin.copy:
+    content: |
+      worker_join: {{ join_command.stdout_lines[0] }}
+      control_plane_join: {{ join_command.stdout_lines[0] }} --control-plane --certificate-key {{ certificate_key.stdout_lines[0] }}
+    dest: /tmp/join_command
+    mode: 0644
+  changed_when: false
+
+- name: "Fetch files from remote host to local host"
+  ansible.builtin.fetch:
+    src: /tmp/join_command
+    dest: ./
+    flat: true
+  changed_when: false

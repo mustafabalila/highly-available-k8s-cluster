@@ -1,0 +1,35 @@
+- name: "Install apt-transport-https ca-certificates curl"
+  become: true
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+    state: present
+
+- name: "Download the Google Cloud public signing key"
+  become: true
+  ansible.builtin.apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: "Add the Kubernetes apt repository"
+  become: true
+  ansible.builtin.apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: "Install kubelet kubeadm kubectl"
+  become: true
+  ansible.builtin.apt:
+    name:
+      - kubelet={{ kubernetes_version }}
+      - kubeadm={{ kubernetes_version }}
+      - kubectl={{ kubernetes_version }}
+    state: present
+    update_cache: true
+
+- name: "Hold kubelet kubeadm kubectl"
+  become: true
+  ansible.builtin.command: apt-mark hold kubelet kubeadm kubectl
+  changed_when: false
