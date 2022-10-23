@@ -1,0 +1,14 @@
+name: Lint
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Lint the playbook
+      - name: Run a one-line script
+        uses: ansible/ansible-lint-action@v6.8.2
+      
+
+
